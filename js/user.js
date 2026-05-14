@@ -42,6 +42,8 @@ function showProfileNotSetup(email) {
     hideLoading();
     document.querySelector('.portal-container').innerHTML = `
         <div style="text-align:center;padding:80px 20px;animation:slideUp 0.8s cubic-bezier(0.16,1,0.3,1);">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2e/SpaceX_logo_black.svg"
+                 class="brand-logo" style="width:140px;opacity:0.15;margin-bottom:40px;height:auto;" alt="SpaceX">
             <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;">PROFILE PENDING</div>
             <h2 style="font-size:20px;font-weight:600;margin-bottom:12px;color:var(--text);letter-spacing:-0.02em;">Profile Not Set Up Yet</h2>
             <p style="color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:32px;">
@@ -59,6 +61,8 @@ function showNotFound() {
     hideLoading();
     document.querySelector('.portal-container').innerHTML = `
         <div style="text-align:center;padding:80px 20px;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2e/SpaceX_logo_black.svg"
+                 class="brand-logo" style="width:140px;opacity:0.15;margin-bottom:40px;height:auto;" alt="SpaceX">
             <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;">ACCESS DENIED</div>
             <h2 style="font-size:20px;font-weight:600;margin-bottom:12px;color:var(--text);">Member Not Found</h2>
             <p style="color:var(--muted);font-size:13px;">No record found for ID: <code style="color:var(--muted);background:rgba(var(--text-rgb),0.05);padding:2px 8px;border-radius:4px;">${userId || 'none'}</code></p>
@@ -69,6 +73,8 @@ function showFetchError() {
     hideLoading();
     document.querySelector('.portal-container').innerHTML = `
         <div style="text-align:center;padding:80px 20px;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2e/SpaceX_logo_black.svg"
+                 class="brand-logo" style="width:140px;opacity:0.15;margin-bottom:40px;height:auto;" alt="SpaceX">
             <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:16px;">CONNECTION ERROR</div>
             <h2 style="font-size:20px;font-weight:600;margin-bottom:12px;color:var(--text);">Service Unavailable</h2>
             <p style="color:var(--muted);font-size:13px;">Could not reach the member database.<br>Check your connection and try again.</p>
