@@ -513,6 +513,16 @@
                 <h3>Members</h3>
                 <span class="count-badge" id="member-count">0 members</span>
             </div>
+            <div class="table-header-right">
+                <div style="position:relative; display:flex; align-items:center;">
+                    <i data-lucide="search" style="position:absolute; left:12px; width:14px; height:14px; color:var(--muted); opacity:0.5;"></i>
+                    <input type="text" id="member-search" placeholder="Search members..." 
+                        style="background:rgba(var(--text-rgb),0.03); border:1px solid var(--border); border-radius:10px; padding:8px 12px 8px 36px; font-size:12px; color:var(--text); outline:none; transition:all 0.2s; width:220px;"
+                        onfocus="this.style.borderColor='rgba(var(--text-rgb),0.2)'; this.style.background='rgba(var(--text-rgb),0.05)';"
+                        onblur="this.style.borderColor='var(--border)'; this.style.background='rgba(var(--text-rgb),0.03)';"
+                    >
+                </div>
+            </div>
         </div>
         <div style="overflow-x:auto;">
             <table>

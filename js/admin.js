@@ -1,15 +1,10 @@
 import { db as firestoreDb } from './firebase-config.js';
 import {
-    collection, getDocs, doc, setDoc, deleteDoc
+    collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc, addDoc
 } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
 let users = {};
-
-function generateId() {
-    const ids = Object.keys(users).map(Number).filter(n => !isNaN(n));
-    const max = ids.length > 0 ? Math.max(...ids) : 0;
-    return String(max + 1).padStart(3, '0');
-}
+let searchQuery = '';
 
 function tierBadge(tier) {
     const colors = { 'Explorer': 'var(--pending)', 'Pioneer': '#60a5fa', 'Vanguard': 'var(--gold)' };
@@ -34,9 +29,21 @@ function updateStats() {
 
 function renderTable() {
     const tbody = document.getElementById('user-tbody');
-    const entries = Object.values(users);
+    let entries = Object.entries(users).map(([id, data]) => ({ ...data, id }));
+
+    // Search Filter
+    if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        entries = entries.filter(u => 
+            u.name.toLowerCase().includes(q) || 
+            (u.email && u.email.toLowerCase().includes(q)) ||
+            (u.role && u.role.toLowerCase().includes(q)) ||
+            u.id.toLowerCase().includes(q)
+        );
+    }
+
     if (entries.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:48px;color:var(--muted);font-size:13px;">No members found. Add your first member above.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:48px;color:var(--muted);font-size:13px;">${searchQuery ? 'No members match your search.' : 'No members found. Add your first member above.'}</td></tr>`;
         document.getElementById('member-count').textContent = '0 members';
         updateStats();
         return;
@@ -45,8 +52,12 @@ function renderTable() {
         const emailDisplay = u.email
             ? `<span title="${u.email}" style="display:inline-block;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;">${u.email}</span>`
             : `<span style="color:var(--muted); opacity: 0.4;">—</span>`;
+        
+        // Use short ID for display if it's a long Firestore ID
+        const displayId = u.id.length > 8 ? u.id.substring(0, 8) + '…' : u.id;
+        
         return `<tr style="border-bottom:1px solid var(--border);">
-            <td style="padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted); opacity: 0.8;">#${u.id}</td>
+            <td style="padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted); opacity: 0.8;" title="${u.id}">#${displayId}</td>
             <td style="padding:16px 20px;"><div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px;">${u.name}</div><div style="font-size:11px;color:var(--muted);">${u.role}</div></td>
             <td style="padding:16px 20px;">${tierBadge(u.tier)}</td>
             <td style="padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);">${u.clearance}</td>
@@ -61,7 +72,7 @@ function renderTable() {
     }).join('');
     document.getElementById('member-count').textContent = `${entries.length} member${entries.length !== 1 ? 's' : ''}`;
     updateStats();
-    lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
 }
 
 function showLoading() {
@@ -75,13 +86,20 @@ function showLoading() {
 async function loadUsers() {
     showLoading();
     try {
-        const snap = await getDocs(collection(firestoreDb, 'members'));
-        users = {};
-        snap.forEach(d => { users[d.id] = d.data(); });
-        renderTable();
+        const q = collection(firestoreDb, 'members');
+        onSnapshot(q, (snapshot) => {
+            users = {};
+            snapshot.forEach(d => { 
+                users[d.id] = { ...d.data(), id: d.id }; 
+            });
+            renderTable();
+        }, (err) => {
+            console.error('Firestore Real-time Error:', err);
+            showFetchError('Real-time connection interrupted. Please refresh.');
+        });
     } catch (err) {
-        console.error('Firestore Error (loadUsers):', err);
-        showFetchError('Could not load members. Check your Firestore security rules or internet connection.');
+        console.error('Firestore Error (init loadUsers):', err);
+        showFetchError('Could not initialize member list. Check your connection.');
     }
 }
 
@@ -141,7 +159,7 @@ async function saveUser() {
 
     const errEl   = document.getElementById('modal-error');
     const saveBtn = document.getElementById('btn-modal-save');
-    const isNew   = !(id && users[id]);
+    const isNew   = !id; // No ID means it's a new record
 
     if (!name || !role || !clearance || !joined) {
         errEl.textContent = 'All fields are required.';
@@ -159,19 +177,26 @@ async function saveUser() {
         return;
     }
 
-    const targetId = isNew ? generateId() : id;
-    const member   = { id: targetId, name, role, email, tier, clearance, status, joined, avatarUrl, backgroundUrl };
-
     saveBtn.disabled    = true;
     saveBtn.textContent = 'Saving…';
     errEl.style.display = 'none';
 
-        try {
-        await setDoc(doc(firestoreDb, 'members', targetId), member);
-        users[targetId] = member;
-
+    try {
+        if (isNew) {
+            // Use addDoc for auto-ID
+            await addDoc(collection(firestoreDb, 'members'), {
+                name, role, email, tier, clearance, status, joined, avatarUrl, backgroundUrl,
+                createdAt: new Date().toISOString()
+            });
+        } else {
+            // Update existing doc
+            const docRef = doc(firestoreDb, 'members', id);
+            await setDoc(docRef, {
+                id, name, role, email, tier, clearance, status, joined, avatarUrl, backgroundUrl,
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+        }
         closeModal();
-        renderTable();
     } catch (err) {
         console.error('Firestore Error (saveUser):', err);
         errEl.textContent   = 'Failed to save. Check your Firestore rules or connection.';
@@ -201,9 +226,7 @@ async function deleteUser() {
     delBtn.textContent = 'Removing…';
     try {
         await deleteDoc(doc(firestoreDb, 'members', id));
-        delete users[id];
         closeConfirm();
-        renderTable();
     } catch (err) {
         console.error('Firestore Error (deleteUser):', err);
         delBtn.disabled    = false;
@@ -214,6 +237,16 @@ async function deleteUser() {
 
 document.addEventListener('DOMContentLoaded', function () {
     loadUsers();
+    
+    // Search Listener
+    const searchInput = document.getElementById('member-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            renderTable();
+        });
+    }
+
     document.getElementById('btn-add-member').addEventListener('click', openAddModal);
     document.getElementById('btn-modal-cancel').addEventListener('click', closeModal);
     document.getElementById('btn-modal-save').addEventListener('click', saveUser);
