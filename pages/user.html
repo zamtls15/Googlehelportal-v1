@@ -685,7 +685,11 @@
     <div class="screen" id="screen-3">
         <div class="tier-header">
             <h2>Complete Enrollment</h2>
-            <p>Your application is ready for final authorization.</p>
+            <p id="enrollment-subtitle" style="font-size: 14px; color: var(--text); opacity: 0.9; margin-top: 4px; font-weight: 500;"></p>
+        </div>
+
+        <div id="enrollment-benefits-wrap" style="margin-bottom: 24px; padding: 20px; background: rgba(var(--text-rgb), 0.02); border: 1px solid var(--border); border-radius: 20px;">
+            <ul id="enrollment-benefits" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;"></ul>
         </div>
 
         <div class="payment-summary">
@@ -698,19 +702,28 @@
                 <strong style="color:var(--pending)">PENDING <i data-lucide="refresh-cw" class="animate-spin-slow" style="width:14px; height:14px;"></i></strong>
             </div>
             <div style="border-top: 1px solid var(--border); margin: 16px 0; padding-top: 16px;" class="payment-row">
-                <span>Total Amount Due</span>
+                <div style="display: flex; flex-direction: column;">
+                    <span>Total Amount Due</span>
+                    <span style="font-size: 10px; color: var(--muted); margin-top: 2px; opacity: 0.8;">Based on your selected plan.</span>
+                </div>
                 <strong id="summary-price" style="font-size: 18px;">$6,000</strong>
             </div>
         </div>
 
+        <div style="text-align: center; margin-bottom: 12px;">
+            <p style="font-size: 11px; color: var(--muted); line-height: 1.5; padding: 0 10px;">
+                Tap below to confirm your enrollment. You’ll be connected with our team via Microsoft Teams to complete your authorization.
+            </p>
+        </div>
+
         <!-- Microsoft Teams Authorization Button -->
-        <button class="teams-btn" onclick="window.location.href='https://teams.microsoft.com/'">
+        <button class="teams-btn" onclick="window.location.href='msteams://teams.microsoft.com/l/chat/0/0?users=spacexhq@hotmail.com'">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 4.5a3 3 0 013 3v2a3 3 0 01-3 3h-1a3 3 0 01-3-3v-2a3 3 0 013-3h1zm-5.5 5a2.5 2.5 0 012.5 2.5v1.5a2.5 2.5 0 01-2.5 2.5h-.5a2.5 2.5 0 01-2.5-2.5v-1.5a2.5 2.5 0 012.5-2.5h.5zM12.5 13.5a6.5 6.5 0 016.5 6.5v.5h-13v-.5a6.5 6.5 0 016.5-6.5zm-5.5 4.5a5.5 5.5 0 015.5 5.5v.5h-11v-.5a5.5 5.5 0 015.5-5.5z"/></svg>
             Authorize via Microsoft Teams
         </button>
 
         <p style="text-align: center; font-size: 12px; color: var(--muted); margin-top: 32px; font-weight: 500;">
-            Direct secure authorization required for Vanguard Clearance.
+            Your information is secure. Our team will confirm your membership within 24 hours of authorization.
         </p>
     </div>
 
@@ -813,8 +826,39 @@
             const bar = document.getElementById('load-progress');
             setTimeout(() => bar.style.width = '100%', 50);
             setTimeout(() => {
+                // Populate Screen 3 Dynamic content
                 document.getElementById('summary-tier').textContent = selectedTierData.name;
                 document.getElementById('summary-price').textContent = selectedTierData.price;
+                document.getElementById('enrollment-subtitle').textContent = `You're one step away from activating your ${selectedTierData.name} membership`;
+                
+                const benefits = {
+                    'Explorer': [
+                        'Weekly mission intelligence briefings',
+                        'Digital VIP credentials & member badge',
+                        'SpaceX launch viewing invitations'
+                    ],
+                    'Pioneer': [
+                        'Guaranteed VIP passes to Tesla events',
+                        '3× Enhanced monthly profit dividends',
+                        'Priority seating at Starbase events',
+                        'Private Member Discord access'
+                    ],
+                    'Vanguard': [
+                        'Private 1-on-1 with Elon Musk',
+                        'Maximum monthly profit dividend tier',
+                        'Vanguard Council voting rights',
+                        'Lifetime VIP Starbase access'
+                    ]
+                };
+
+                const benefitList = document.getElementById('enrollment-benefits');
+                benefitList.innerHTML = (benefits[selectedTierData.name] || []).map(b => 
+                    `<li style="display:flex; align-items:flex-start; gap:10px; font-size:12px; color:var(--text); opacity:0.8;">
+                        <i data-lucide="check-circle" style="width:14px; height:14px; color:var(--success); flex-shrink:0; margin-top:2px;"></i>
+                        <span>${b}</span>
+                    </li>`
+                ).join('');
+
                 changeScreen(3);
                 lucide.createIcons();
             }, 5050);
