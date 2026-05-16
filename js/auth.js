@@ -49,11 +49,20 @@ export function getSession() {
 }
 
 export async function isLoggedIn() {
-    const { data } = await supabase.auth.getSession();
-    if (data?.session) {
-        saveSession(data.session.user.email);
+    // Try getSession first
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session) {
+        saveSession(sessionData.session.user.email);
         return true;
     }
+
+    // Fallback try getUser (more reliable for mobile/iOS Safari session restoration)
+    const { data: userData } = await supabase.auth.getUser();
+    if (userData?.user) {
+        saveSession(userData.user.email);
+        return true;
+    }
+
     return false;
 }
 
