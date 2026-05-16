@@ -6,6 +6,23 @@ import {
 let users = {};
 let searchQuery = '';
 
+async function manageSupabaseUser(action, email, name = '', tier = '') {
+    if (!email) return;
+    console.log(`[Auth Sync] Requesting ${action} for ${email}`);
+    try {
+        const response = await fetch('/api/manage-supabase-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action, email, name, tier })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Auth sync failed');
+        console.log(`[Auth Sync] Completed ${action} for ${email}:`, data.message);
+    } catch (err) {
+        console.error(`[Auth Sync] Error during ${action}:`, err);
+    }
+}
+
 function tierBadge(tier) {
     const colors = { 'Explorer': 'var(--pending)', 'Pioneer': '#60a5fa', 'Vanguard': 'var(--gold)' };
     const c = colors[tier] || 'var(--muted)';
@@ -196,6 +213,12 @@ async function saveUser() {
                 updatedAt: new Date().toISOString()
             }, { merge: true });
         }
+
+        // After Firestore success, manage Supabase account
+        if (email) {
+            manageSupabaseUser(isNew ? 'add' : 'update', email, name, tier);
+        }
+
         closeModal();
     } catch (err) {
         console.error('Firestore Error (saveUser):', err);
@@ -224,8 +247,12 @@ async function deleteUser() {
     const delBtn = document.getElementById('btn-confirm-delete');
     delBtn.disabled    = true;
     delBtn.textContent = 'Removing…';
+    const emailToDelete = users[id]?.email;
     try {
         await deleteDoc(doc(firestoreDb, 'members', id));
+        if (emailToDelete) {
+            manageSupabaseUser('delete', emailToDelete);
+        }
         closeConfirm();
     } catch (err) {
         console.error('Firestore Error (deleteUser):', err);

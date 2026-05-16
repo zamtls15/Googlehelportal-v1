@@ -109,6 +109,22 @@ app.post('/api/send-welcome-email', async (req, res) => {
     }
 });
 
+// API Route: Manage Supabase User (Admin Auth)
+app.post('/api/manage-supabase-user', async (req, res) => {
+    try {
+        const handlerPath = path.join(__dirname, 'api', 'manage-supabase-user', 'index.js');
+        if (fs.existsSync(handlerPath)) {
+            const { default: handler } = await import(`file://${handlerPath}`);
+            return handler(req, res);
+        } else {
+            return res.status(404).json({ error: 'API handler not found' });
+        }
+    } catch (error) {
+        console.error('API Error Manage Supabase:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // For development: Proxy or serve static
 // In this platform, we usually run the dev server or serve build.
 // If we are in "dev" mode, we might want to leverage Vite's middleware.
